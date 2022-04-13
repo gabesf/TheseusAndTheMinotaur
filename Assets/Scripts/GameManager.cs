@@ -24,155 +24,209 @@ public class GameManager : MonoBehaviour
     public TheseusController theseusController;
     public MinotaurController minotaurController;
 
+    private GridUnitHandler[,] mazeGrid;
+    public List<MazeDataSO> mazes;
+    public Vector2 minotaurStartingPosition;
     public int theseusStartingPositionX = 0;
     public int theseusStartingPositionY = 0;
+    private int currentMazeId;
 
-    public Vector2 minotaurStartingPosition;
-    private GridUnitHandler[,] mazeGrid;
-    private bool theseusTurn;
 
-    public List<MazeDataSO> mazes;
-    // Start is called before the first frame update
+    bool firstFrame = true;
+
     void Start()
     {
         gamestate = GameState.LoadingMaze;
-
-        //gamestate = GameState.EditingMaze;
-
-        Debug.Log(theseusController.transform.name);
-
-        InputManagerActions.OnSelectMazeById += HandleOnSelectMazeById;
-
+        RegisterListeners();
+        
     }
 
+    #region Event Handling
+    private void RegisterListeners()
+    {
+        InputManagerActions.OnSelectMazeById += HandleOnSelectMazeById;
+        InputManagerActions.OnEditState += HandleOnEditState;
+        GameActions.OnMazeIsBuilt += HandleMazeIsBuilt;
+        GameActions.OnRestartInput += HandleOnRestartInput;
+    }
+
+    private void OnDisable()
+    {
+        InputManagerActions.OnSelectMazeById -= HandleOnSelectMazeById;
+        InputManagerActions.OnEditState -= HandleOnEditState;
+        GameActions.OnMazeIsBuilt -= HandleMazeIsBuilt;
+        GameActions.OnRestartInput -= HandleOnRestartInput;
+    }
+
+    private void HandleOnRestartInput()
+    {
+        InputManagerActions.OnSelectMazeById.Invoke(currentMazeId);
+    }
+
+    private void HandleMazeIsBuilt(GridUnitHandler[,] mazeGrid)
+    {
+        this.mazeGrid = mazeGrid;
+        gamestate = GameState.TheseusTurn;
+        //Debug.Log("Inside GameManager " + mazeGrid[0, 0].transform.name);
+    }
     private void HandleOnSelectMazeById(int mazeId)
     {
         Debug.Log("Maze selected " + mazeId);
+        currentMazeId = mazeId;
         LoadMaze(mazes[mazeId]);
     }
 
-    // Update is called once per frame
+    private void HandleOnEditState(bool value)
+    {
+        Debug.Log("Handle EditState Changed " + value);
+        if (value == true)
+        {
+            gamestate = GameState.EditingMaze;
+        }
+        if (value == false)
+        {
+            InputManagerActions.OnSelectMazeById.Invoke(currentMazeId);
+            Debug.Log("Must Load Maze " + currentMazeId);
+            //LoadMaze(mazes[currentMazeId]);
+        }
+    }
+
+    #endregion
+
+
+
+    #region Gameplay
+
     void Update()
     {
-        //Could use a state machine for this, but for the sake of simplicity and not remembering by heart, will use a switch.
+        if(firstFrame == true)
+        {
+            InputManagerActions.OnSelectMazeById.Invoke(0);
+            firstFrame = false;
+        }
         switch (gamestate)
         {
-            case GameState.EditingMaze:
-
-                break;
-            
-            case GameState.PositioningEntities:
-                theseusController.SetPosition(theseusStartingPositionX, theseusStartingPositionY);
-                minotaurController.SetPosition(0, 0);
-                gamestate = GameState.TheseusTurn;
-                break;
-
             case GameState.TheseusTurn:
-                
-                if(CheckForInput() == true)
-                {
-                    if(CheckIfGameIsFinished() == true)
-                    {
-                        gamestate = GameState.TheseusVictory;
-                    } else
-                    {
-                        gamestate = GameState.MinotaurTurn;
-                    }
-                    
-                }
-                //wait for input
-                //perform move
+                ProcessTheseusTurn();
                 break;
 
             case GameState.MinotaurTurn:
-                Debug.Log("MinotaurTurn");
-                minotaurController.HandleTurn();
-
-                if(CheckIfGameIsFinished() == true)
-                {
-                    gamestate = GameState.MinotaurVictory;
-                } else
-                {
-                    gamestate = GameState.TheseusTurn;
-                }
-                //check best move 
-                //perform move
+                ProcessMinotaurTurn();
                 break;
 
- 
+
             case GameState.TheseusVictory:
-                Debug.Log("Game Is Finished Theseu Escaped");
- 
+                //Debug.Log("Game Is Finished Theseu Escaped");
+
                 break;
             case GameState.MinotaurVictory:
-                Debug.Log("Game Is Finished Minotaur Got Theseu");
-                //restart
+                //Debug.Log("Game Is Finished Minotaur Got Theseu");
                 break;
             default:
                 break;
         }
+    }
 
+
+    private void ProcessTheseusTurn()
+    {
+        if (CheckForValidMove() == true)
+        {
+            if (CheckIfGameIsFinished() == true)
+            {
+                gamestate = GameState.TheseusVictory;
+            }
+            else
+            {
+                gamestate = GameState.MinotaurTurn;
+            }
+        }
+    }
+
+    private void ProcessMinotaurTurn()
+    {
+        minotaurController.HandleTurn();
+        if (CheckIfGameIsFinished() == true)
+        {
+            gamestate = GameState.MinotaurVictory;
+        }
+        else
+        {
+            gamestate = GameState.TheseusTurn;
+        }
     }
 
     private bool CheckIfGameIsFinished()
     {
-        if(theseusController.CheckIfWon() == true || minotaurController.CheckIfWon())
+        if (theseusController.CheckIfWon() == true || minotaurController.CheckIfWon())
         {
             return true;
         }
-
         return false;
     }
 
-    private bool CheckForInput()
+    private bool CheckForValidMove()
     {
         bool validMove = false;
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            gamestate = GameState.EditingMaze;
-        }
-
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-
             validMove = theseusController.TryToMove(RelativePosition.Up);
-            Debug.Log($"Tried to move up and was {validMove}");
-        } 
-        
+        }
+
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             validMove = theseusController.TryToMove(RelativePosition.Down);
-            Debug.Log($"Tried to move down and was {validMove}");
         }
 
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             validMove = theseusController.TryToMove(RelativePosition.Left);
-            Debug.Log($"Tried to move left and was {validMove}");
-
         }
 
         else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             validMove = theseusController.TryToMove(RelativePosition.Right);
-            Debug.Log($"Tried to move right and was {validMove}");
-
         }
 
+        //If theseus should wait, sending a valid move without a TryToMove call is enough
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            validMove = true;
+        }
 
-
+        //If undo is desired, sending a validMove = false will avoid state changing, so is still Theseus round 
+        else if (Input.GetKeyDown(KeyCode.U))
+        {
+            theseusController.UndoMove();
+            minotaurController.UndoMove();
+            validMove = false;
+        }
         return validMove;
     }
 
+    #endregion
+
+
+    #region MazeRelatedUtils
     private void LoadMaze(MazeDataSO mazeDataSO)
     {
-        Debug.Log("Will call Build Maze inside GameManager ");
         mazeBuilder.BuildMaze(mazeDataSO);
-        mazeGrid = mazeBuilder.MazeGrid;
-        Debug.Log("Inside GameManager " + mazeGrid[0, 0].transform.name);
-        //theseusController.SetMaze(mazeGrid);
-        //minotaurController.SetMaze(mazeGrid);
     }
 
-    
+    internal MazeDataSO GetCurrentMazeData()
+    {
+        return mazes[currentMazeId];
+    }
+    #endregion
+
+
+
+
+
+
+
+
+
+
+
 }

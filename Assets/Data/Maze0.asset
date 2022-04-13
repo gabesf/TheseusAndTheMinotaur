@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1485987d181060e4f976b04d0fdc9c79, type: 3}
   m_Name: Maze0
   m_EditorClassIdentifier: 
-  theseusStartingPosition: 0500000005000000
-  minotaurStartingPosition: 0600000006000000
-  gridSize: 0a0000000a000000
-  mazeExit: 0900000009000000
+  theseusStartingPosition: 0000000000000000
+  minotaurStartingPosition: 0700000007000000
+  gridSize: 0f0000000f000000
+  mazeExit: 0700000007000000
+  gridsUnitsWithWalls: []

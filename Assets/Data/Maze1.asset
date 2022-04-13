@@ -13,6 +13,51 @@ MonoBehaviour:
   m_Name: Maze1
   m_EditorClassIdentifier: 
   theseusStartingPosition: 0100000001000000
-  minotaurStartingPosition: 0000000000000000
-  gridSize: 0300000003000000
-  mazeExit: 0200000002000000
+  minotaurStartingPosition: 0a0000000a000000
+  gridSize: 0f0000000f000000
+  mazeExit: 0e0000000e000000
+  gridsUnitsWithWalls:
+  - walls: 03000000
+    gridPosition: 0600000005000000
+  - walls: 010000000000000003000000
+    gridPosition: 0700000006000000
+  - walls: 030000000000000000000000
+    gridPosition: 0800000006000000
+  - walls: 00000000
+    gridPosition: 0800000007000000
+  - walls: 0100000001000000
+    gridPosition: 0700000007000000
+  - walls: 0100000001000000
+    gridPosition: 0700000008000000
+  - walls: 000000000000000002000000
+    gridPosition: 0900000009000000
+  - walls: 03000000
+    gridPosition: 0a00000009000000
+  - walls: 03000000
+    gridPosition: 0d00000007000000
+  - walls: 02000000030000000100000000000000
+    gridPosition: 0c00000007000000
+  - walls: 00000000
+    gridPosition: 0c00000008000000
+  - walls: 00000000
+    gridPosition: 0c00000009000000
+  - walls: 010000000100000000000000
+    gridPosition: 0b0000000c000000
+  - walls: 010000000200000002000000
+    gridPosition: 0c0000000c000000
+  - walls: 01000000
+    gridPosition: 0b0000000d000000
+  - walls: 00000000000000000100000001000000
+    gridPosition: 090000000d000000
+  - walls: 02000000
+    gridPosition: 060000000d000000
+  - walls: 02000000
+    gridPosition: 060000000e000000
+  - walls: 01000000
+    gridPosition: 0d0000000a000000
+  - walls: 0000000003000000
+    gridPosition: 0d00000008000000
+  - walls: 00000000
+    gridPosition: 060000000c000000
+  - walls: 0200000002000000
+    gridPosition: 050000000b000000

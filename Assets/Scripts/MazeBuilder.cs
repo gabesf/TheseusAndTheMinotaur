@@ -5,15 +5,13 @@ using UnityEngine;
 
 public class MazeBuilder : MonoBehaviour
 {
-    public int width = 10;
-    public int height = 10;
-
     public int[] mazeExit = new int[2];
 
     public GameObject gridUnitPrefab;
     public GameObject gridTheseuVictoryPrefab;
 
     private GameObject maze;
+
     private GridUnitHandler[,] mazeGrid;
     public GridUnitHandler[,] MazeGrid { get 
         {
@@ -24,61 +22,66 @@ public class MazeBuilder : MonoBehaviour
         } 
     }
 
-    private void Start()
+    private void Awake()
     {
+        
         maze = new GameObject("Maze");
-        maze.transform.position = new Vector3(-4.725f, -4.725f, 0f);
+        maze.transform.position = new Vector3(-12.35f, -7.35f, 0f);
     }
 
     public void BuildMaze(MazeDataSO mazeData)
     {
-        DestroyMaze();
+        //DestroyMaze(mazeData.gridSize);
+        DeactivateUnusedMaze(mazeData.gridSize);
         mazeGrid = new GridUnitHandler[mazeData.gridSize[0], mazeData.gridSize[1]];
         BuildGrid(mazeData.gridSize);
         SetBorderWalls(mazeData.gridSize);
 
-        //testing
-        int[] gridPosition = { 1, 1 };
-        List<RelativePosition> wallsRelativePosition = new List<RelativePosition>();
-        wallsRelativePosition.Add(RelativePosition.Down);
-        wallsRelativePosition.Add(RelativePosition.Up);
-        wallsRelativePosition.Add(RelativePosition.Right);
-        wallsRelativePosition.Add(RelativePosition.Left);
+ 
 
+        //mazeData.gridsUnitsWithWalls.Add(new GridUnitData(gridPosition, wallsRelativePosition));
 
-        mazeData.gridsWithWalls.Add(new GridUnitData(gridPosition, wallsRelativePosition));
-
-        SetWalls(mazeData.gridsWithWalls);
+        SetWalls(mazeData.gridsUnitsWithWalls);
         SetMazeExit(mazeData.mazeExit);
         SetEntitiesPosition(mazeData.theseusStartingPosition, mazeData.minotaurStartingPosition);
-        //ResetWalls();
-        //SetWallsThatExist(walls);
     }
 
     private void SetEntitiesPosition(int[] theseusStartingPosition, int[] minotaurStartingPosition)
     {
-        Debug.Log(mazeGrid[0, 0].transform.name);
-        EntitiesActions.OnMazeIsBuilt?.Invoke(mazeGrid);
-        EntitiesActions.OnTheseusMoveRequest?.Invoke(theseusStartingPosition);
-        EntitiesActions.OnMinotaurMoveRequest?.Invoke(minotaurStartingPosition);
+        
+        GameActions.OnMazeIsBuilt?.Invoke(mazeGrid);
+        GameActions.OnTheseusMoveRequest?.Invoke(theseusStartingPosition);
+        GameActions.OnMinotaurMoveRequest?.Invoke(minotaurStartingPosition);
     }
 
-    private void DestroyMaze()
+    private void DestroyMaze(int[] gridSize)
     {
-        if (mazeGrid != null)
+        if(mazeGrid != null)
         {
             foreach (var gridUnit in mazeGrid)
             {
                 Destroy(gridUnit.gameObject);
             }
-            
         }
-        else
-        {
-            Debug.Log("Maze Dont Exist");
-        }
-
+    }
+    private void DeactivateUnusedMaze(int[] gridSize)
+    {
         
+        if (mazeGrid != null)
+        {
+            Debug.Log("Will deactivate the maze");
+            foreach (var gridUnit in mazeGrid)
+            {
+                gridUnit.gameObject.SetActive(false);
+                //gridUnit.gameObject.SetActive(true);
+                int[] positionCoordinates = gridUnit.GetPositionCoordinates();
+                if (positionCoordinates[0] > gridSize[0] || positionCoordinates[1] > gridSize[1])
+                {
+                    Debug.Log(gridUnit.transform.name);
+                    
+                }
+            }        
+        }
     }
 
     private void SetMazeExit(int[] mazeExit)
@@ -123,6 +126,8 @@ public class MazeBuilder : MonoBehaviour
 
     private void BuildGrid(int[] gridSize)
     {
+        Debug.Log("Building Grid " + gridUnitPrefab.name);
+        Debug.Log($"Grid size {gridSize[0]}");
         for (int i = 0; i < gridSize[0]; i++)
         {
             for (int k = 0; k < gridSize[1]; k++)
@@ -134,6 +139,8 @@ public class MazeBuilder : MonoBehaviour
                 gridUnit.transform.name = $"({i}, {k})";               
                 mazeGrid[i, k] = gridUnit.GetComponent<GridUnitHandler>();
                 
+                int[] position = { i, k };
+                mazeGrid[i, k].SetPositionCoordinates(position);
             }
         }
     }

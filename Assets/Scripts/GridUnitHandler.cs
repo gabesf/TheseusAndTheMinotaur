@@ -23,17 +23,39 @@ public class GridUnitHandler : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
     private bool IsExit = false;
+    private int[] position;
+
     private void Awake()
+    {
+        AddAndConfigureWalls();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void AddAndConfigureWalls()
     {
         walls.Add(RelativePosition.Up, false);
         walls.Add(RelativePosition.Right, false);
         walls.Add(RelativePosition.Left, false);
         walls.Add(RelativePosition.Down, false);
+        topWall.relativePosition = RelativePosition.Up;
+        rightWall.relativePosition = RelativePosition.Right;
+        leftWall.relativePosition = RelativePosition.Left;
+        bottomWall.relativePosition = RelativePosition.Down;
     }
 
     public void OnMouseOver()
     {
-        Debug.Log("Mouse Over me");   
+        
+        if(GameManager.gamestate == GameManager.GameState.EditingMaze)
+        {
+            EditingActions.OnGridUnitHovered.Invoke(position);
+            spriteRenderer.color = Color.blue;
+        }      
+    }
+
+    public void OnMouseExit()
+    {
+        spriteRenderer.color = Color.white;
     }
     public void SetWall(RelativePosition wallRelativePosition, bool value)
     {
@@ -47,7 +69,6 @@ public class GridUnitHandler : MonoBehaviour
             throw new Exception("Dictionary does not contain " + wallRelativePosition);
 
         }
-
     }
 
     internal void SetIsExit()
@@ -65,9 +86,12 @@ public class GridUnitHandler : MonoBehaviour
     internal bool GetOppositeWall(RelativePosition wallRelativePosition)
     {
         wallRelativePosition = InvertWallRelativePosition(wallRelativePosition);
-        return GetWall(wallRelativePosition);
-        
-        
+        return GetWall(wallRelativePosition);       
+    }
+
+    internal int[] GetPositionCoordinates()
+    {
+        return position;
     }
 
     private RelativePosition InvertWallRelativePosition(RelativePosition wallRelativePosition)
@@ -89,7 +113,6 @@ public class GridUnitHandler : MonoBehaviour
 
     private void SetActiveWallSprite(RelativePosition wallRelativePosition, bool value)
     {
-       
         switch (wallRelativePosition)
         {
             case RelativePosition.Up:
@@ -123,14 +146,13 @@ public class GridUnitHandler : MonoBehaviour
     }
 
 
-    internal Vector3 GetPosition()
+    internal Vector3 GetTransformPosition()
     {
         return transform.position;
     }
 
-    // Update is called once per frame
-    void Update()
+    internal void SetPositionCoordinates(int[] position)
     {
-        
+        this.position = position;
     }
 }

@@ -7,91 +7,166 @@ public enum WallStatus
 {
     OnMaze,
     NotOnMaze,
-    HighLighted
 }
 public class WallHandler : MonoBehaviour
 {
-    //I will sleep now :) 
     private WallStatus wallStatus;
-    private WallStatus previousWallStatus;
-    public SpriteRenderer spriteRenderer;
+    private SpriteRenderer spriteRenderer;
+    public RelativePosition relativePosition;
+
+    public Color OnMazeOnEdit;
+    public Color NotOnMazeOnEdit;
+    public Color OnMazeOnPlay;
+    public Color NotOnMazeOnPlay;
     private void Awake()
     {
+        //Debug.Log("Wall Handler Awake");
         SetIsOnMaze(false);
+        InputManagerActions.OnEditState += HandleOnEditState;
+        GameActions.OnMazeIsBuilt += HandleOnMazeIsBuilt;
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
+
+    private void Start()
+    {
+        UpdateWallRenderer();
+    }
+
+    private void HandleOnMazeIsBuilt(GridUnitHandler[,] grid)
+    {
+        UpdateWallRenderer();
+    }
+
+
+    private void OnDisable()
+    {
+        InputManagerActions.OnEditState -= HandleOnEditState;
+    }
+    private void OnDestroy()
+    {
+        InputManagerActions.OnEditState -= HandleOnEditState;
+    }
+
+    private void HandleOnEditState(bool value)
+    {
+        if (value == true)
+        {
+            RenderAsEditable();
+        }
+        else
+        {
+            RenderAsPlayable();
+        }
+    }
+
+    private void RenderAsPlayable()
+    {
+        if (transform != null)
+        {
+            if (wallStatus == WallStatus.OnMaze)
+            {
+                spriteRenderer.color = OnMazeOnPlay;
+            }
+            else
+            {
+                spriteRenderer.color = NotOnMazeOnPlay;
+            }
+        }
+    }
+
+    private void RenderAsEditable()
+    {
+        if (wallStatus == WallStatus.OnMaze)
+        {
+            spriteRenderer.color = OnMazeOnEdit;
+        }
+        else
+        {
+            spriteRenderer.color = NotOnMazeOnEdit;
+        }
+    }
+
     private void OnMouseOver()
     {
-        Debug.Log("Mouse over " + GameManager.gamestate.ToString());
-        if(GameManager.gamestate == GameManager.GameState.EditingMaze)
+        //Debug.Log(transform.name + " " + relativePosition);
+
+        if (GameManager.gamestate == GameManager.GameState.EditingMaze)
         {
-            previousWallStatus = wallStatus;
-            wallStatus = WallStatus.HighLighted;
+            //Debug.Log("Hovering a " + relativePosition + "wall");
+            EditingActions.OnWallHovered.Invoke(relativePosition);
+            //previousWallStatus = wallStatus;
+            //wallStatus = WallStatus.HighLighted;
+        }
+        //
+        //UpdateWallRenderer();
+
+    }
+
+    private void OnMouseDown()
+    {
+        Debug.Log("Clicked on wall");
+        if (GameManager.gamestate == GameManager.GameState.EditingMaze)
+        {
+            if (wallStatus == WallStatus.OnMaze)
+            {
+                wallStatus = WallStatus.NotOnMaze;
+            }
+            else
+            {
+                wallStatus = WallStatus.OnMaze;
+            }
         }
 
+        EditingActions.OnWallClicked.Invoke(wallStatus);
+
+
         UpdateWallRenderer();
-        
+
+
     }
 
     private void OnMouseExit()
     {
         if (GameManager.gamestate == GameManager.GameState.EditingMaze)
         {
-            if(wallStatus == WallStatus.HighLighted)
-            {
-                wallStatus = previousWallStatus;
-            }
-            
+            EditingActions.OnWallNotHovered.Invoke();
+
         }
 
-        UpdateWallRenderer();
+        //UpdateWallRenderer();
     }
-
-    private void HighlightWall(bool value)
-    {
-        if(value == true)
-        {   
-            
-            spriteRenderer.color = Color.blue;
-        } else 
-        {
-            spriteRenderer.color = Color.black;
-        }
-        
-    }
-
-    // St
-    // art is called before the first frame updat
 
 
 
     internal void SetIsOnMaze(bool value)
     {
-        if(value == true)
+        if (value == true)
         {
             wallStatus = WallStatus.OnMaze;
-        } else
+        }
+        else
         {
             wallStatus = WallStatus.NotOnMaze;
         }
-
-        UpdateWallRenderer();
+        //UpdateWallRenderer();
+        //UpdateWallRenderer();
     }
 
     private void UpdateWallRenderer()
     {
-        switch (wallStatus)
+        if (GameManager.gamestate == GameManager.GameState.EditingMaze)
         {
-            case WallStatus.OnMaze:
-                spriteRenderer.color = Color.black;
-                break;
-            case WallStatus.NotOnMaze:
-                spriteRenderer.color = new Color(0, 0, 0, 0);
-                break;
-            case WallStatus.HighLighted:
-                spriteRenderer.color = Color.blue;
-                break;
-            default:
-                break;
+            RenderAsEditable();
         }
+        else
+        {
+            RenderAsPlayable();
+        }
+
+    }
+
+    private void Update()
+    {
+        //Debug.Log(relativePosition);
     }
 }

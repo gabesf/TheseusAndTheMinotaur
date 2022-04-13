@@ -19,9 +19,20 @@ public class InputHandler : MonoBehaviour
             InputManagerActions.OnSelectMazeById.Invoke(2);
         }
 
-        if (Input.GetKeyDown(KeyCode.Alpha4))
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            InputManagerActions.OnSelectMazeById.Invoke(3);
+            if(GameManager.gamestate != GameManager.GameState.EditingMaze)
+            {               
+                InputManagerActions.OnEditState.Invoke(true);
+            } else
+            {
+                InputManagerActions.OnEditState.Invoke(false);
+            }                       
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            GameActions.OnRestartInput.Invoke();
         }
     }
 

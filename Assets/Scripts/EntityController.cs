@@ -1,45 +1,103 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public abstract class EntityController : MonoBehaviour
 {
     protected GridUnitHandler[,] mazeGrid;
-    protected int currentHorizontalPosition;
-    protected int currentVerticalPosition;
+    protected int[] currentPosition = new int[2];
+    protected int[] positionBeforeMove = new int[2];
     public virtual void HandleTurn() { }
     public virtual bool CheckIfWon() { throw new System.NotImplementedException(); }
 
     protected virtual void Start()
     {
-        EntitiesActions.OnMazeIsBuilt += HandleOnMazeIsbuilt;
+        RegisterListeners();
+    }
+
+    #region EventHandling
+    private void RegisterListeners()
+    {
+        GameActions.OnMazeIsBuilt += HandleOnMazeIsbuilt;
+    }
+
+    private void OnDisable()
+    {
+        GameActions.OnMazeIsBuilt -= HandleOnMazeIsbuilt;
+    }
+
+    private void HandleOnMazeIsbuilt(GridUnitHandler[,] mazeGrid)
+    {
+        this.mazeGrid = mazeGrid;
     }
 
     protected void HandleOnMoveRequest(int[] goToPosition)
     {
         SetPosition(goToPosition[0], goToPosition[1]);
     }
+    #endregion
 
-    private void HandleOnMazeIsbuilt(GridUnitHandler[,] mazeGrid)
+    #region MovementHandling
+
+    internal bool TryToMove(RelativePosition move)
     {
-        //Debug.Log("Setting Handle Maze Is Built");
-        Debug.Log(mazeGrid[0, 0].transform.name);
-        this.mazeGrid = mazeGrid;
-        //Debug.Log("Sanity check");
-        //Debug.Log(this.mazeGrid[0, 0].transform.name);
+        int[] incrementPosition = ParseMoveInput(move);
+
+        //Checking if attempted move is outside of limits
+        if (CheckIfGridExist(currentPosition[0] + incrementPosition[0], currentPosition[1] + incrementPosition[1]) == false)
+        {
+            return false;
+        }
+
+        GridUnitHandler nextGrid = mazeGrid[currentPosition[0] + incrementPosition[0], currentPosition[1] + incrementPosition[1]];
+        //Checking if there is an opposite wall from the neighbour grid unit
+        if (nextGrid.GetOppositeWall(move) == true)
+        {
+            return false;
+        }
+
+        //Checking if there is a wall on the current grid unit
+        if (mazeGrid[currentPosition[0], currentPosition[1]].GetWall(move) == true)
+        {
+            return false;
+        }
+
+        //if gets here it's because it's a valid move
+        Move(incrementPosition[0], incrementPosition[1]);
+        return true;
     }
     public virtual void Move(int horizontalMove, int verticalMove)
     {
-        SetPosition(currentHorizontalPosition + horizontalMove, currentVerticalPosition + verticalMove);
+        SetPosition(currentPosition[0] + horizontalMove, currentPosition[1] + verticalMove);
     }
 
-    
+    internal void UndoMove()
+    {
+        SetPosition(positionBeforeMove[0], positionBeforeMove[1]);
+    }
+    public void SetPosition(int x, int y)
+    {
+        currentPosition[0] = x;
+        currentPosition[1] = y;
+
+
+        transform.position = mazeGrid[currentPosition[0], currentPosition[1]].GetTransformPosition();
+    }
+
+    //private IEnumerator MoveAnimated(Vector2 position)
+    //{
+    //    
+    //    //yield return new WaitUntil(() => transform.position-position)
+    //}
+
+
     public int[] GetPosition()
     {
-        int[] currentPosition = new int[2];
-        currentPosition[0] = currentHorizontalPosition;
-        currentPosition[1] = currentVerticalPosition;
         return currentPosition;
     }
 
+    #endregion
+
+    #region Utils
     private bool CheckIfGridExist(int nextHorizontalPosition, int nextVerticalPosition)
     {
         if (nextHorizontalPosition > mazeGrid.GetLength(0) - 1
@@ -51,49 +109,7 @@ public abstract class EntityController : MonoBehaviour
         }
         return true;
     }
-
-    internal bool TryToMove(RelativePosition move)
-    {
-        int[] incrementPosition = ParseMoveInput(move);
-
-
-        if (CheckIfGridExist(currentHorizontalPosition + incrementPosition[0], currentVerticalPosition + incrementPosition[1]) == false)
-        {
-            return false;
-        }
-
-
-        GridUnitHandler nextGrid = mazeGrid[currentHorizontalPosition + incrementPosition[0], currentVerticalPosition + incrementPosition[1]];
-        
-        if (nextGrid.GetOppositeWall(move) == true)
-        {
-            return false;
-        }
-        
-
-        if (mazeGrid[currentHorizontalPosition, currentVerticalPosition].GetWall(move) == true)
-        {
-            return false;
-        }
-        
-        Move(incrementPosition[0], incrementPosition[1]);
-        return true;
-    }
-
-    public void SetPosition(int x, int y)
-    {
-        Debug.Log($"The current Horizontal Position was {currentHorizontalPosition}");
-
-        currentHorizontalPosition = x;
-        currentVerticalPosition = y;
-
-        //Debug.Log($"The new Horizontal Position is {currentHorizontalPosition}");
-
-        //currentUnitGrid = mazeGrid[x, y];
-        Debug.Log(mazeGrid[0, 0].transform.name);
-        transform.position = mazeGrid[currentHorizontalPosition, currentVerticalPosition].GetPosition();
-    }
-
+    //Just translating relative position enum to integers values
     protected int[] ParseMoveInput(RelativePosition move)
     {
         int[] movementIncrement = new int[2];
@@ -120,9 +136,8 @@ public abstract class EntityController : MonoBehaviour
             default:
                 break;
         }
-
-
         return movementIncrement;
     }
+    #endregion
 
 }
